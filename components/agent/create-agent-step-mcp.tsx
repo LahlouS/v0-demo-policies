@@ -42,7 +42,7 @@ import {
 import { useRegistryTools, RegistryTool } from "@/hooks/useRegistryTools";
 
 // LUCIDE
-import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown } from "lucide-react";
+import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown, MessageSquarePlus } from "lucide-react";
 
 // TYPES
 import { PermissionSet } from "@/types/permissions";
@@ -52,6 +52,7 @@ import { MCPTool } from "@/types/mcp";
 // POLICY COMPONENTS
 import { PolicyEditor } from "@/components/policy/policy-editor";
 import { IntegrationTemplates } from "@/components/policy/integration-templates";
+import { PolicyChatSheet } from "@/components/policy/policy-chat-sheet";
 
 // TYPESCRIPT
 type Props = {
@@ -90,6 +91,9 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     providerStates,
     blockedTools,
     toggleBlockedTool,
+    toolPolicies,
+    setToolPolicy,
+    clearToolPolicies,
   } = useAgentStore();
 
   // Registry Hook
@@ -98,8 +102,8 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
   // States
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
   const [expandedTool, setExpandedTool] = useState<{ name: string; provider: string } | null>(null);
-  const [toolPolicies, setToolPolicies] = useState<Record<string, string>>({});
   const [showIntegrationTemplates, setShowIntegrationTemplates] = useState<string | null>(null);
+  const [chatSheetOpen, setChatSheetOpen] = useState(false);
 
   // Helper to get tools for a provider from registry or fallback
   const getToolsForProviderFromRegistry = useCallback(
@@ -206,40 +210,30 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     } else {
       // Initialize policy if not exists
       if (!toolPolicies[toolName]) {
-        setToolPolicies((prev) => ({
-          ...prev,
-          [toolName]: getDefaultPolicy(toolName),
-        }));
+        setToolPolicy(toolName, getDefaultPolicy(toolName));
       }
       setExpandedTool({ name: toolName, provider });
     }
-  }, [expandedTool, toolPolicies]);
+  }, [expandedTool, toolPolicies, setToolPolicy]);
 
   // Callback - Update Tool Policy
   const updateToolPolicy = useCallback((toolName: string, json: string) => {
-    setToolPolicies((prev) => ({
-      ...prev,
-      [toolName]: json,
-    }));
-  }, []);
+    setToolPolicy(toolName, json);
+  }, [setToolPolicy]);
 
   // Callback - Restore Provider Policies
   const restoreProviderPolicies = useCallback((toolNames: string[]) => {
-    setToolPolicies((prev) => {
-      const next = { ...prev };
-      toolNames.forEach((name) => delete next[name]);
-      return next;
-    });
-  }, []);
+    clearToolPolicies(toolNames);
+  }, [clearToolPolicies]);
 
   // Callback - Apply Integration Template
   const applyIntegrationTemplate = useCallback((providerId: string, policies: Record<string, string>) => {
-    setToolPolicies((prev) => ({
-      ...prev,
-      ...policies,
-    }));
+    Object.entries(policies).forEach(([toolName, policy]) => {
+      setToolPolicy(toolName, policy);
+    });
+    void providerId;
     setShowIntegrationTemplates(null);
-  }, []);
+  }, [setToolPolicy]);
 
   // Get tool fields for the active tool
   const getToolFields = useCallback((provider: string): string[] => {
@@ -285,9 +279,9 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
             className="w-full space-y-4"
           >
             {/* INFO BANNER */}
-            <div className="flex items-start gap-3 p-4 bg-accent border border-border rounded-2xl">
+            <div className="flex items-center gap-3 p-4 bg-accent border border-border rounded-2xl">
               <Info className="size-5 text-accent-interactive mt-0.5 shrink-0" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">
                   {t("fineTuneAccess")}
                 </p>
@@ -295,6 +289,14 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                   {t("fineTuneDescription")}
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setChatSheetOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-cta border-2 border-cta-border text-white hover:opacity-90 transition-opacity flex-shrink-0"
+              >
+                <MessageSquarePlus className="w-3.5 h-3.5" />
+                Ask AI
+              </button>
             </div>
 
             {/* TOOLS BY PROVIDER */}
@@ -525,6 +527,9 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
           {t("continue")}
         </Button>
       </div>
+
+      {/* POLICY CHAT SHEET */}
+      <PolicyChatSheet open={chatSheetOpen} onOpenChange={setChatSheetOpen} />
 
       {/* INTEGRATION TEMPLATES DIALOG */}
       <Dialog 
