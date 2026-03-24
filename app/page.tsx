@@ -6,7 +6,7 @@ import CreateAgentStepMCP from "@/components/agent/create-agent-step-mcp";
 // Mock translations for demonstration
 const messages = {
   AgentCreate: {
-    mcpConfigTitle: "Configure MCP Tools",
+    mcpConfigTitle: "Fine grained policies configuration",
     mcpConfigDescription: "Fine-tune which tools your agent can access and define policies for each.",
     enableMcpAccess: "Enable MCP Access",
     mcpToggleLabel: "Allow your agent to use MCP tools from connected integrations.",

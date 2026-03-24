@@ -13,7 +13,6 @@ import { useAgentStore } from "@/stores/agentStore";
 
 // SHADCN
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -22,7 +21,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
+
 
 // FRAMER MOTION
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +42,7 @@ import {
 import { useRegistryTools, RegistryTool } from "@/hooks/useRegistryTools";
 
 // LUCIDE
-import { Info, Zap, Check, Loader2, ChevronRight, ShieldCheck, Settings2 } from "lucide-react";
+import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown } from "lucide-react";
 
 // TYPES
 import { PermissionSet } from "@/types/permissions";
@@ -87,19 +88,16 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
   const {
     permissionSets,
     providerStates,
-    mcpEnabled,
-    setMcpEnabled,
     blockedTools,
     toggleBlockedTool,
   } = useAgentStore();
 
   // Registry Hook
-  const { toolsByProvider, isLoading: isLoadingRegistry } = useRegistryTools();
+  const { toolsByProvider } = useRegistryTools();
 
   // States
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
-  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
-  const [activeTool, setActiveTool] = useState<{ name: string; provider: string } | null>(null);
+  const [expandedTool, setExpandedTool] = useState<{ name: string; provider: string } | null>(null);
   const [toolPolicies, setToolPolicies] = useState<Record<string, string>>({});
   const [showIntegrationTemplates, setShowIntegrationTemplates] = useState<string | null>(null);
 
@@ -188,14 +186,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     return grouped;
   }, [availableTools]);
 
-  // Stats
-  const stats = useMemo(() => {
-    const total: number = availableTools.length;
-    const blocked: number = availableTools.filter((t: MCPTool) => t.isBlocked).length;
-    const withPolicies = Object.keys(toolPolicies).length;
-    return { total, blocked, enabled: total - blocked, withPolicies };
-  }, [availableTools, toolPolicies]);
-
   // Callback - Toggle Provider Expansion
   const toggleProviderExpanded = useCallback((providerId: string) => {
     setExpandedProviders((prev: Set<string>) => {
@@ -209,18 +199,21 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     });
   }, []);
 
-  // Callback - Open Policy Dialog
-  const openPolicyDialog = useCallback((toolName: string, provider: string) => {
-    setActiveTool({ name: toolName, provider });
-    // Initialize policy if not exists
-    if (!toolPolicies[toolName]) {
-      setToolPolicies((prev) => ({
-        ...prev,
-        [toolName]: getDefaultPolicy(toolName),
-      }));
+  // Callback - Toggle Tool Expansion
+  const toggleToolExpanded = useCallback((toolName: string, provider: string) => {
+    if (expandedTool?.name === toolName) {
+      setExpandedTool(null);
+    } else {
+      // Initialize policy if not exists
+      if (!toolPolicies[toolName]) {
+        setToolPolicies((prev) => ({
+          ...prev,
+          [toolName]: getDefaultPolicy(toolName),
+        }));
+      }
+      setExpandedTool({ name: toolName, provider });
     }
-    setPolicyDialogOpen(true);
-  }, [toolPolicies]);
+  }, [expandedTool, toolPolicies]);
 
   // Callback - Update Tool Policy
   const updateToolPolicy = useCallback((toolName: string, json: string) => {
@@ -228,6 +221,15 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
       ...prev,
       [toolName]: json,
     }));
+  }, []);
+
+  // Callback - Restore Provider Policies
+  const restoreProviderPolicies = useCallback((toolNames: string[]) => {
+    setToolPolicies((prev) => {
+      const next = { ...prev };
+      toolNames.forEach((name) => delete next[name]);
+      return next;
+    });
   }, []);
 
   // Callback - Apply Integration Template
@@ -273,64 +275,9 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
         </p>
       </div>
 
-      {/* MCP TOGGLE */}
-      <div className="w-full p-6 bg-surface-1 border border-border rounded-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-cta" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                {t("enableMcpAccess")}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("mcpToggleLabel")}
-              </p>
-            </div>
-          </div>
-          <Switch checked={mcpEnabled} onCheckedChange={setMcpEnabled} />
-        </div>
-
-        {mcpEnabled && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-4 pt-4 border-t border-border"
-          >
-            <div className="flex items-center gap-2">
-              {isLoadingRegistry ? (
-                <>
-                  <Loader2 className="size-4 text-muted-foreground animate-spin" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("loadingTools")}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Check className="size-4 text-cta" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("mcpToolStats", {
-                      enabled: stats.enabled,
-                      blocked: stats.blocked,
-                    })}
-                    {stats.withPolicies > 0 && (
-                      <span className="ml-2 text-cta">
-                        • {stats.withPolicies} with policies
-                      </span>
-                    )}
-                  </span>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </div>
-
       {/* TOOL CONFIGURATION */}
       <AnimatePresence>
-        {mcpEnabled && availableTools.length > 0 && (
+        {availableTools.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -366,31 +313,52 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                     >
                       {/* PROVIDER HEADER */}
                       <div className="flex items-center justify-between p-4 hover:bg-surface-1 transition-colors">
-                        <button
-                          type="button"
-                          onClick={() => toggleProviderExpanded(providerId)}
-                          className="flex items-center gap-3 flex-1 cursor-pointer"
-                        >
-                          {/* Provider Logo */}
-                          <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
+                        {/* Left: logo + text */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 cursor-pointer"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                          >
                             <span className="text-xs font-bold text-muted-foreground uppercase">
                               {(provider?.name || providerId).slice(0, 2)}
                             </span>
                           </div>
-                          <div className="text-left">
+                          <div
+                            className="text-left flex-1 min-w-0 cursor-pointer"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                          >
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
-                            <p className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                               {tools.length - blockedCount} enabled, {blockedCount} blocked
                               {policiesCount > 0 && (
                                 <span className="text-cta ml-1">
                                   • {policiesCount} policies
                                 </span>
                               )}
-                            </p>
+                              {policiesCount > 0 && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    restoreProviderPolicies(tools.map((t) => t.name));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.stopPropagation();
+                                      restoreProviderPolicies(tools.map((t) => t.name));
+                                    }
+                                  }}
+                                  className="text-destructive/70 hover:text-destructive transition-colors ml-1 cursor-pointer"
+                                >
+                                  • restore
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </button>
+                        </div>
 
                         <div className="flex items-center gap-2">
                           {/* Integration Templates Button */}
@@ -433,6 +401,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                             <div className="border-t border-border divide-y divide-border">
                               {tools.map((tool) => {
                                 const hasPolicy = hasCustomPolicy(tool.name);
+                                const isToolExpanded = expandedTool?.name === tool.name;
 
                                 return (
                                   <div key={tool.name} className="bg-card">
@@ -480,15 +449,47 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                                           </Badge>
                                         ) : (
                                           <button
-                                            onClick={() => openPolicyDialog(tool.name, tool.provider)}
-                                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-cta border-2 border-cta-border text-white hover:opacity-90 transition-opacity"
+                                            onClick={() => toggleToolExpanded(tool.name, tool.provider)}
+                                            className={clsx(
+                                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all",
+                                              isToolExpanded 
+                                                ? "bg-surface-2 border-2 border-border text-foreground" 
+                                                : "bg-cta border-2 border-cta-border text-white hover:opacity-90"
+                                            )}
                                           >
                                             <Settings2 className="w-3.5 h-3.5" />
                                             Policy
+                                            <ChevronDown className={clsx(
+                                              "w-3.5 h-3.5 transition-transform",
+                                              isToolExpanded && "rotate-180"
+                                            )} />
                                           </button>
                                         )}
                                       </div>
                                     </div>
+
+                                    {/* Inline Policy Editor */}
+                                    <AnimatePresence>
+                                      {isToolExpanded && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: "auto", opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          className="overflow-hidden border-t border-border"
+                                        >
+                                          <div className="h-[500px] bg-surface-1">
+                                            <PolicyEditor
+                                              toolName={tool.name}
+                                              toolFields={getToolFields(tool.provider)}
+                                              serviceName={tool.provider}
+                                              policyJson={toolPolicies[tool.name] || getDefaultPolicy(tool.name)}
+                                              onPolicyChange={(json) => updateToolPolicy(tool.name, json)}
+                                              onNext={() => setExpandedTool(null)}
+                                            />
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </div>
                                 );
                               })}
@@ -506,7 +507,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
       </AnimatePresence>
 
       {/* EMPTY STATE */}
-      {mcpEnabled && availableTools.length === 0 && (
+      {availableTools.length === 0 && (
         <div className="w-full p-8 text-center bg-surface-1 border border-border rounded-2xl">
           <Zap className="size-12 text-muted-foreground/30 mx-auto mb-4" />
           <p className="text-muted-foreground">
@@ -525,30 +526,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
         </Button>
       </div>
 
-      {/* POLICY DIALOG */}
-      <Dialog open={policyDialogOpen} onOpenChange={setPolicyDialogOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 gap-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b border-border flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <ShieldCheck className="w-5 h-5 text-cta" />
-              Policy for <span className="font-mono text-cta">{activeTool?.name}</span>
-            </DialogTitle>
-          </DialogHeader>
-          {activeTool && (
-            <div className="flex-1 overflow-hidden">
-              <PolicyEditor
-                toolName={activeTool.name}
-                toolFields={getToolFields(activeTool.provider)}
-                serviceName={activeTool.provider}
-                policyJson={toolPolicies[activeTool.name] || getDefaultPolicy(activeTool.name)}
-                onPolicyChange={(json) => updateToolPolicy(activeTool.name, json)}
-                onNext={() => setPolicyDialogOpen(false)}
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* INTEGRATION TEMPLATES DIALOG */}
       <Dialog 
         open={showIntegrationTemplates !== null} 
@@ -560,6 +537,9 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
               <ShieldCheck className="w-5 h-5 text-cta" />
               Policy Templates for {showIntegrationTemplates && getProviderById(showIntegrationTemplates)?.name}
             </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Apply pre-configured policy templates to quickly set up common access patterns.
+            </DialogDescription>
           </DialogHeader>
           {showIntegrationTemplates && (
             <IntegrationTemplates

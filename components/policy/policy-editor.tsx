@@ -55,10 +55,10 @@ function buildJsonFromRules(currentJson: string, rules: PolicyRule[]): string {
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "visual", label: "Visual", icon: LayoutList },
-  { id: "json",   label: "JSON",   icon: Code2 },
-  { id: "ai",     label: "AI",     icon: Sparkles },
-  { id: "templates", label: "Templates", icon: BookOpen },
+  { id: "ai",        label: "AI",        icon: Sparkles },
+  { id: "visual",    label: "Visual",    icon: LayoutList },
+  { id: "json",      label: "JSON",      icon: Code2 },
+  { id: "templates", label: "Inspiration", icon: BookOpen },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -66,7 +66,7 @@ type TabId = (typeof TABS)[number]["id"];
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, onPolicyChange, onNext }: PolicyEditorProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("visual");
+  const [activeTab, setActiveTab] = useState<TabId>("ai");
   const [visualRules, setVisualRules] = useState<PolicyRule[]>([]);
 
   // Sync rules from JSON whenever tab switches to visual or policyJson changes from outside
