@@ -313,42 +313,43 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                     >
                       {/* PROVIDER HEADER */}
                       <div className="flex items-center justify-between p-4 hover:bg-surface-1 transition-colors">
-                        <button
-                          type="button"
-                          onClick={() => toggleProviderExpanded(providerId)}
-                          className="flex items-center gap-3 flex-1 cursor-pointer"
-                        >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           {/* Provider Logo */}
-                          <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                            className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0"
+                          >
                             <span className="text-xs font-bold text-muted-foreground uppercase">
                               {(provider?.name || providerId).slice(0, 2)}
                             </span>
-                          </div>
-                          <div className="text-left">
+                          </button>
+                          <div
+                            className="text-left flex-1 cursor-pointer"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                          >
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               {tools.length - blockedCount} enabled, {blockedCount} blocked
                               {policiesCount > 0 && (
-                                <>
-                                  <span className="text-cta ml-1">
-                                    • {policiesCount} policies
-                                  </span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      restoreProviderPolicies(tools.map((t) => t.name));
-                                    }}
-                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-1"
-                                  >
-                                    • restore
-                                  </button>
-                                </>
+                                <span className="text-cta ml-1">
+                                  • {policiesCount} policies
+                                </span>
                               )}
                             </p>
                           </div>
-                        </button>
+                          {policiesCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => restoreProviderPolicies(tools.map((t) => t.name))}
+                              className="text-xs text-destructive/70 hover:text-destructive transition-colors"
+                            >
+                              restore
+                            </button>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-2">
                           {/* Integration Templates Button */}
