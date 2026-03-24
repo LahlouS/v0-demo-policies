@@ -1,0 +1,13 @@
+This folder should contain the provider logos:
+- gmail.png
+- slack.png
+- linear.png
+- linear-dark.png
+- notion.png
+- notion-dark.png
+- github.png
+- github-dark.png
+- figma.png
+- mcp-light.png
+- mcp-dark.png
+- default.png

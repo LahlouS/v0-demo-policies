@@ -19,6 +19,9 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Hodor custom variants
+        back: 'rounded-2xl border border-border text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors',
+        submit: 'rounded-xl bg-cta border-2 border-cta-border text-white font-medium hover:opacity-90 transition-opacity',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',
