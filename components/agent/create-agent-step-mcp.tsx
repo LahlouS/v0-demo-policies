@@ -223,6 +223,15 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     }));
   }, []);
 
+  // Callback - Restore Provider Policies
+  const restoreProviderPolicies = useCallback((toolNames: string[]) => {
+    setToolPolicies((prev) => {
+      const next = { ...prev };
+      toolNames.forEach((name) => delete next[name]);
+      return next;
+    });
+  }, []);
+
   // Callback - Apply Integration Template
   const applyIntegrationTemplate = useCallback((providerId: string, policies: Record<string, string>) => {
     setToolPolicies((prev) => ({
@@ -319,12 +328,23 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
                               {tools.length - blockedCount} enabled, {blockedCount} blocked
                               {policiesCount > 0 && (
-                                <span className="text-cta ml-1">
-                                  • {policiesCount} policies
-                                </span>
+                                <>
+                                  <span className="text-cta ml-1">
+                                    • {policiesCount} policies
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      restoreProviderPolicies(tools.map((t) => t.name));
+                                    }}
+                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-1"
+                                  >
+                                    • restore
+                                  </button>
+                                </>
                               )}
                             </p>
                           </div>
