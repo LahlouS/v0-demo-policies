@@ -51,40 +51,47 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
     onToolCall({ toolCall }) {
       if (toolCall.dynamic) return;
 
-      console.log("[v0] onToolCall fired:", toolCall.toolName, toolCall.args);
+      // Log the full toolCall object to find the correct args key
+      console.log("[v0] onToolCall full object:", JSON.stringify(toolCall, null, 2));
+
+      // AI SDK 6: args live under toolCall.input (renamed from toolCall.args in v5)
+      const input = (toolCall as { toolName: string; toolCallId: string; input?: unknown; args?: unknown }).input
+        ?? (toolCall as { toolName: string; toolCallId: string; input?: unknown; args?: unknown }).args
+        ?? {};
+
+      console.log("[v0] onToolCall name:", toolCall.toolName, "input:", JSON.stringify(input));
 
       let result: string = "ok";
 
       if (toolCall.toolName === "setToolPolicy") {
-        const { toolName, policy } = toolCall.args as { toolName: string; policy: string };
-        console.log("[v0] setToolPolicy calling store for:", toolName, "policy:", policy);
+        const { toolName, policy } = input as { toolName: string; policy: string };
+        console.log("[v0] setToolPolicy → toolName:", toolName, "policy:", policy);
         setToolPolicy(toolName, policy);
-        console.log("[v0] setToolPolicy store call complete for:", toolName);
         result = `Policy set for ${toolName}`;
       }
 
       if (toolCall.toolName === "blockTool") {
-        const { toolName } = toolCall.args as { toolName: string };
-        console.log("[v0] blockTool:", toolName, "currently blocked:", blockedTools.includes(toolName));
+        const { toolName } = input as { toolName: string };
+        console.log("[v0] blockTool → toolName:", toolName);
         if (!blockedTools.includes(toolName)) toggleBlockedTool(toolName);
         result = `Blocked ${toolName}`;
       }
 
       if (toolCall.toolName === "unblockTool") {
-        const { toolName } = toolCall.args as { toolName: string };
-        console.log("[v0] unblockTool:", toolName);
+        const { toolName } = input as { toolName: string };
+        console.log("[v0] unblockTool → toolName:", toolName);
         if (blockedTools.includes(toolName)) toggleBlockedTool(toolName);
         result = `Unblocked ${toolName}`;
       }
 
       if (toolCall.toolName === "clearProviderPolicies") {
-        const { toolNames } = toolCall.args as { provider: string; toolNames: string[] };
-        console.log("[v0] clearProviderPolicies:", toolNames);
+        const { toolNames } = input as { provider: string; toolNames: string[] };
+        console.log("[v0] clearProviderPolicies → toolNames:", toolNames);
         clearToolPolicies(toolNames);
         result = `Cleared policies`;
       }
 
-      console.log("[v0] addToolOutput for:", toolCall.toolName, "result:", result);
+      console.log("[v0] addToolOutput → toolName:", toolCall.toolName, "result:", result);
       addToolOutput({
         tool: toolCall.toolName as "setToolPolicy" | "blockTool" | "unblockTool" | "clearProviderPolicies",
         toolCallId: toolCall.toolCallId,
@@ -211,7 +218,6 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
                       const inv = part.toolInvocation;
                       const isDone = inv.state === "result";
                       const isRunning = inv.state === "call" || inv.state === "partial-call";
-                      console.log("[v0] rendering tool-invocation part:", inv.toolName, "state:", inv.state);
                       return (
                         <div
                           key={i}
