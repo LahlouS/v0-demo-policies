@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 import { useAgentStore } from "@/stores/agentStore";
 import { PolicyChatMessage } from "@/app/api/policy-chat/route";
 import {
@@ -35,7 +35,7 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
   const { getConfigSnapshot, setToolPolicy, toggleBlockedTool, blockedTools, clearToolPolicies } =
     useAgentStore();
 
-  const { messages, sendMessage, status } = useChat<PolicyChatMessage>({
+  const { messages, sendMessage, status, addToolOutput } = useChat<PolicyChatMessage>({
     transport: new DefaultChatTransport({
       api: "/api/policy-chat",
       prepareSendMessagesRequest: ({ id, messages }) => ({
@@ -46,33 +46,50 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
         },
       }),
     }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     // Client-side tool execution: apply store mutations when model calls tools
     onToolCall({ toolCall }) {
       if (toolCall.dynamic) return;
 
+      console.log("[v0] onToolCall fired:", toolCall.toolName, toolCall.args);
+
+      let result: string = "ok";
+
       if (toolCall.toolName === "setToolPolicy") {
         const { toolName, policy } = toolCall.args as { toolName: string; policy: string };
+        console.log("[v0] setToolPolicy calling store for:", toolName, "policy:", policy);
         setToolPolicy(toolName, policy);
+        console.log("[v0] setToolPolicy store call complete for:", toolName);
+        result = `Policy set for ${toolName}`;
       }
 
       if (toolCall.toolName === "blockTool") {
         const { toolName } = toolCall.args as { toolName: string };
-        if (!blockedTools.includes(toolName)) {
-          toggleBlockedTool(toolName);
-        }
+        console.log("[v0] blockTool:", toolName, "currently blocked:", blockedTools.includes(toolName));
+        if (!blockedTools.includes(toolName)) toggleBlockedTool(toolName);
+        result = `Blocked ${toolName}`;
       }
 
       if (toolCall.toolName === "unblockTool") {
         const { toolName } = toolCall.args as { toolName: string };
-        if (blockedTools.includes(toolName)) {
-          toggleBlockedTool(toolName);
-        }
+        console.log("[v0] unblockTool:", toolName);
+        if (blockedTools.includes(toolName)) toggleBlockedTool(toolName);
+        result = `Unblocked ${toolName}`;
       }
 
       if (toolCall.toolName === "clearProviderPolicies") {
         const { toolNames } = toolCall.args as { provider: string; toolNames: string[] };
+        console.log("[v0] clearProviderPolicies:", toolNames);
         clearToolPolicies(toolNames);
+        result = `Cleared policies`;
       }
+
+      console.log("[v0] addToolOutput for:", toolCall.toolName, "result:", result);
+      addToolOutput({
+        tool: toolCall.toolName as "setToolPolicy" | "blockTool" | "unblockTool" | "clearProviderPolicies",
+        toolCallId: toolCall.toolCallId,
+        output: result,
+      });
     },
   });
 
@@ -189,13 +206,12 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
                       );
                     }
 
-                    // Tool call parts — show a compact indicator
-                    if (part.type.startsWith("tool-")) {
-                      const toolName = part.type.replace("tool-", "");
-                      const isExecuting =
-                        part.state === "input-available" || part.state === "input-streaming";
-                      const isDone = part.state === "output-available";
-
+                    // Tool invocation parts
+                    if (part.type === "tool-invocation") {
+                      const inv = part.toolInvocation;
+                      const isDone = inv.state === "result";
+                      const isRunning = inv.state === "call" || inv.state === "partial-call";
+                      console.log("[v0] rendering tool-invocation part:", inv.toolName, "state:", inv.state);
                       return (
                         <div
                           key={i}
@@ -203,7 +219,7 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
                         >
                           <Wrench className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                           <span className="text-xs font-mono text-muted-foreground">
-                            {toolName}
+                            {inv.toolName}
                           </span>
                           <Badge
                             variant="outline"
@@ -214,7 +230,7 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
                                 : "text-muted-foreground"
                             )}
                           >
-                            {isExecuting ? "running" : isDone ? "applied" : part.state}
+                            {isRunning ? "running" : isDone ? "applied" : inv.state}
                           </Badge>
                         </div>
                       );
