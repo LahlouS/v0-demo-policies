@@ -331,24 +331,27 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                               {tools.length - blockedCount} enabled, {blockedCount} blocked
                               {policiesCount > 0 && (
-                                <span className="text-cta ml-1">
-                                  • {policiesCount} policies
-                                </span>
+                                <>
+                                  <span className="text-cta ml-1">
+                                    • {policiesCount} policies
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      restoreProviderPolicies(tools.map((t) => t.name));
+                                    }}
+                                    className="text-xs text-destructive/70 hover:text-destructive transition-colors ml-1"
+                                  >
+                                    • restore
+                                  </button>
+                                </>
                               )}
-                            </p>
+                            </div>
                           </div>
-                          {policiesCount > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => restoreProviderPolicies(tools.map((t) => t.name))}
-                              className="text-xs text-destructive/70 hover:text-destructive transition-colors"
-                            >
-                              restore
-                            </button>
-                          )}
                         </div>
 
                         <div className="flex items-center gap-2">
