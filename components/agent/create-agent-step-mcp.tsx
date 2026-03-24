@@ -313,20 +313,20 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                     >
                       {/* PROVIDER HEADER */}
                       <div className="flex items-center justify-between p-4 hover:bg-surface-1 transition-colors">
-                        {/* Left: logo + text — all clickable to toggle expand */}
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => toggleProviderExpanded(providerId)}
-                          onKeyDown={(e) => e.key === "Enter" && toggleProviderExpanded(providerId)}
-                          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
+                        {/* Left: logo + text */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 cursor-pointer"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                          >
                             <span className="text-xs font-bold text-muted-foreground uppercase">
                               {(provider?.name || providerId).slice(0, 2)}
                             </span>
                           </div>
-                          <div className="text-left flex-1 min-w-0">
+                          <div
+                            className="text-left flex-1 min-w-0 cursor-pointer"
+                            onClick={() => toggleProviderExpanded(providerId)}
+                          >
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
@@ -337,19 +337,28 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                                   • {policiesCount} policies
                                 </span>
                               )}
+                              {policiesCount > 0 && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    restoreProviderPolicies(tools.map((t) => t.name));
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.stopPropagation();
+                                      restoreProviderPolicies(tools.map((t) => t.name));
+                                    }
+                                  }}
+                                  className="text-destructive/70 hover:text-destructive transition-colors ml-1 cursor-pointer"
+                                >
+                                  • restore
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        {/* Restore button — outside the clickable area */}
-                        {policiesCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => restoreProviderPolicies(tools.map((t) => t.name))}
-                            className="text-xs text-destructive/70 hover:text-destructive transition-colors mr-2"
-                          >
-                            • restore
-                          </button>
-                        )}
 
                         <div className="flex items-center gap-2">
                           {/* Integration Templates Button */}
