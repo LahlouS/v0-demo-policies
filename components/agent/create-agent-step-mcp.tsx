@@ -98,8 +98,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
 
   // States
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
-  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
-  const [activeTool, setActiveTool] = useState<{ name: string; provider: string } | null>(null);
+  const [expandedTool, setExpandedTool] = useState<{ name: string; provider: string } | null>(null);
   const [toolPolicies, setToolPolicies] = useState<Record<string, string>>({});
   const [showIntegrationTemplates, setShowIntegrationTemplates] = useState<string | null>(null);
 
@@ -209,18 +208,22 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     });
   }, []);
 
-  // Callback - Open Policy Dialog
-  const openPolicyDialog = useCallback((toolName: string, provider: string) => {
-    setActiveTool({ name: toolName, provider });
-    // Initialize policy if not exists
-    if (!toolPolicies[toolName]) {
-      setToolPolicies((prev) => ({
-        ...prev,
-        [toolName]: getDefaultPolicy(toolName),
-      }));
+  // Callback - Toggle Tool Policy Expansion (inline)
+  const toggleToolExpanded = useCallback((toolName: string, provider: string) => {
+    if (expandedTool?.name === toolName) {
+      // Collapse if clicking the same tool
+      setExpandedTool(null);
+    } else {
+      // Initialize policy if not exists and expand
+      if (!toolPolicies[toolName]) {
+        setToolPolicies((prev) => ({
+          ...prev,
+          [toolName]: getDefaultPolicy(toolName),
+        }));
+      }
+      setExpandedTool({ name: toolName, provider });
     }
-    setPolicyDialogOpen(true);
-  }, [toolPolicies]);
+  }, [expandedTool, toolPolicies]);
 
   // Callback - Update Tool Policy
   const updateToolPolicy = useCallback((toolName: string, json: string) => {
@@ -266,66 +269,37 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
       {/* HEADER */}
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-medium text-foreground">
-          {t("mcpConfigTitle")}
+          Fine grained policies configuration
         </h1>
         <p className="text-lg text-muted-foreground">
-          {t("mcpConfigDescription")}
+          Define custom access policies for each tool to control agent behavior
         </p>
       </div>
 
-      {/* MCP TOGGLE */}
-      <div className="w-full p-6 bg-surface-1 border border-border rounded-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-cta" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                {t("enableMcpAccess")}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("mcpToggleLabel")}
-              </p>
-            </div>
-          </div>
-          <Switch checked={mcpEnabled} onCheckedChange={setMcpEnabled} />
+      {/* STATS BAR */}
+      <div className="w-full flex items-center justify-between p-4 bg-surface-1 border border-border rounded-xl">
+        <div className="flex items-center gap-2">
+          {isLoadingRegistry ? (
+            <>
+              <Loader2 className="size-4 text-muted-foreground animate-spin" />
+              <span className="text-sm text-muted-foreground">
+                Loading tools...
+              </span>
+            </>
+          ) : (
+            <>
+              <Check className="size-4 text-cta" />
+              <span className="text-sm text-muted-foreground">
+                {stats.enabled} tools enabled, {stats.blocked} blocked
+                {stats.withPolicies > 0 && (
+                  <span className="ml-2 text-cta">
+                    • {stats.withPolicies} with policies
+                  </span>
+                )}
+              </span>
+            </>
+          )}
         </div>
-
-        {mcpEnabled && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-4 pt-4 border-t border-border"
-          >
-            <div className="flex items-center gap-2">
-              {isLoadingRegistry ? (
-                <>
-                  <Loader2 className="size-4 text-muted-foreground animate-spin" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("loadingTools")}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Check className="size-4 text-cta" />
-                  <span className="text-sm text-muted-foreground">
-                    {t("mcpToolStats", {
-                      enabled: stats.enabled,
-                      blocked: stats.blocked,
-                    })}
-                    {stats.withPolicies > 0 && (
-                      <span className="ml-2 text-cta">
-                        • {stats.withPolicies} with policies
-                      </span>
-                    )}
-                  </span>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
       </div>
 
       {/* TOOL CONFIGURATION */}
