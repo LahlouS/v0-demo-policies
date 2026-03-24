@@ -60,10 +60,10 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
     <div className="flex flex-col gap-4 p-4">
       {/* Prompt box */}
       <div className={cn(
-        "relative rounded-xl border bg-card transition-all duration-200",
+        "relative rounded-xl border-2 bg-card transition-all duration-200",
         status === "loading"
-          ? "border-brand/50 shadow-[0_0_0_2px_var(--color-brand-muted)]"
-          : "border-border focus-within:border-brand/50 focus-within:shadow-[0_0_0_2px_var(--color-brand-muted)]"
+          ? "border-ring shadow-[0_0_0_2px_var(--color-brand-muted)]"
+          : "border-border focus-within:border-ring focus-within:shadow-[0_0_0_2px_var(--color-brand-muted)]"
       )}>
         <div className="flex items-start gap-3 px-4 pt-3.5 pb-1.5">
           <Sparkles className={cn(
@@ -89,10 +89,10 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
             onClick={generate}
             disabled={!prompt.trim() || status === "loading"}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
               prompt.trim() && status !== "loading"
-                ? "bg-brand text-brand-foreground hover:opacity-90"
-                : "bg-muted text-muted-foreground/50 cursor-not-allowed"
+                ? "bg-cta border-2 border-cta-border text-white hover:opacity-90"
+                : "bg-muted text-muted-foreground/50 cursor-not-allowed border-2 border-transparent"
             )}
           >
             {status === "loading" ? (
@@ -152,13 +152,13 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
           <div className="flex gap-2">
             <button
               onClick={() => { onAccept(preview); reset(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Apply policy
             </button>
             <button
               onClick={reset}
-              className="px-3 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
+              className="px-3 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
             >
               Discard
             </button>

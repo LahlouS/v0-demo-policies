@@ -142,10 +142,10 @@ export function Templates({ onApply }: TemplatesProps) {
                 <button
                   onClick={(e) => handleApply(t, e)}
                   className={cn(
-                    "flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium transition-all",
+                    "flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl font-medium transition-all",
                     isApplied
                       ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                      : "bg-brand text-brand-foreground hover:opacity-90"
+                      : "bg-cta border-2 border-cta-border text-white hover:opacity-90"
                   )}
                 >
                   {isApplied ? <><Check className="w-3 h-3" /> Applied</> : "Use"}

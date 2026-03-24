@@ -315,14 +315,14 @@ function ReviewStep({
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back
         </button>
         <button
           onClick={onSave}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           <ShieldCheck className="w-4 h-4" />
           Activate policy
@@ -354,13 +354,13 @@ function SavedConfirmation({ tool, agent, onReset, onEditAnother }: {
       <div className="flex gap-2 w-full">
         <button
           onClick={onEditAnother}
-          className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
+          className="flex-1 px-4 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
         >
           Edit another tool
         </button>
         <button
           onClick={onReset}
-          className="flex-1 px-4 py-2.5 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          className="flex-1 px-4 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
           New policy
         </button>
@@ -369,7 +369,7 @@ function SavedConfirmation({ tool, agent, onReset, onEditAnother }: {
   );
 }
 
-// ─── Wizard ───────────────────────────────────────────────────────────────────
+// ─── Wizard ────────────────��──────────────────────────────────────────────────
 
 const slideVariants = {
   enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
@@ -450,7 +450,7 @@ export function PolicyWizard() {
   return (
     <div className="w-full max-w-2xl">
       {/* Card */}
-      <div className="rounded-2xl border border-border bg-card shadow-[0_1px_3px_0_rgb(0,0,0,0.06),0_1px_2px_-1px_rgb(0,0,0,0.06)] overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
 
         {/* Card header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface-1">
@@ -520,7 +520,7 @@ export function PolicyWizard() {
                   ))}
                   <button
                     onClick={() => navigate(2)}
-                    className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                    className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
                   >
                     Continue
                     <ChevronRight className="w-4 h-4" />
@@ -535,7 +535,7 @@ export function PolicyWizard() {
                   />
                   <button
                     onClick={() => navigate(3)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand text-brand-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
                   >
                     Edit policy for <span className="font-mono">{activeTool.name}</span>
                     <ChevronRight className="w-4 h-4" />

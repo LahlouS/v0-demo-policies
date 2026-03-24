@@ -64,7 +64,7 @@ function RuleRow({
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
-  const fieldCls = "h-8 rounded-lg border border-border bg-surface-1 px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand transition-colors";
+  const fieldCls = "h-11 rounded-xl border-2 border-border bg-input px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors";
 
   return (
     <div

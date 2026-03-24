@@ -131,7 +131,7 @@ export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, on
 
         <button
           onClick={onNext}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-brand-foreground text-xs font-medium hover:opacity-90 transition-opacity mb-0.5"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cta border-2 border-cta-border text-white text-xs font-medium hover:opacity-90 transition-opacity mb-0.5"
         >
           Review
           <ChevronRight className="w-3.5 h-3.5" />
