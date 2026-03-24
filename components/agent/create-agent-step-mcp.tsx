@@ -42,7 +42,7 @@ import {
 import { useRegistryTools, RegistryTool } from "@/hooks/useRegistryTools";
 
 // LUCIDE
-import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown, MessageSquarePlus } from "lucide-react";
+import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown, Wand2 } from "lucide-react";
 
 // TYPES
 import { PermissionSet } from "@/types/permissions";
@@ -278,24 +278,26 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
             exit={{ opacity: 0, y: -20 }}
             className="w-full space-y-4"
           >
-            {/* INFO BANNER */}
-            <div className="flex items-center gap-3 p-4 bg-accent border border-border rounded-2xl">
-              <Info className="size-5 text-accent-interactive mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  {t("fineTuneAccess")}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("fineTuneDescription")}
-                </p>
+            {/* INFO BANNER + ASK ANYTHING ROW */}
+            <div className="flex items-stretch gap-3">
+              <div className="flex items-start gap-3 p-4 bg-accent border border-border rounded-2xl flex-1 min-w-0">
+                <Info className="size-5 text-accent-interactive mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("fineTuneAccess")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("fineTuneDescription")}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setChatSheetOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-cta border-2 border-cta-border text-white hover:opacity-90 transition-opacity flex-shrink-0"
+                className="flex flex-col items-center justify-center gap-1.5 px-4 py-3 rounded-2xl text-xs font-medium bg-cta border-2 border-cta-border text-white hover:opacity-90 transition-opacity flex-shrink-0"
               >
-                <MessageSquarePlus className="w-3.5 h-3.5" />
-                Ask AI
+                <Wand2 className="w-4 h-4" />
+                Ask Anything
               </button>
             </div>
 
