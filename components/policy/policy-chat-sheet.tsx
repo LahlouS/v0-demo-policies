@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+import { DefaultChatTransport } from "ai";
 import { useAgentStore } from "@/stores/agentStore";
 import { PolicyChatMessage } from "@/app/api/policy-chat/route";
 import {
@@ -46,8 +46,6 @@ export function PolicyChatSheet({ open, onOpenChange }: Props) {
         },
       }),
     }),
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-
     // Client-side tool execution: apply store mutations when model calls tools
     onToolCall({ toolCall }) {
       if (toolCall.dynamic) return;

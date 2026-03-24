@@ -1,6 +1,7 @@
 import {
   convertToModelMessages,
   streamText,
+  stepCountIs,
   tool,
   UIMessage,
   InferUITools,
@@ -86,7 +87,7 @@ INSTRUCTIONS:
 - Keep responses concise and actionable. Don't repeat the full config back unless asked.`,
     messages: await convertToModelMessages(messages),
     tools,
-    stopWhen: (steps) => steps.some((s) => s.toolCalls.length === 0 && s.text.length > 0),
+    stopWhen: stepCountIs(5),
   });
 
   return result.toUIMessageStreamResponse();
