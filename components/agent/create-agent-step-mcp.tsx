@@ -14,15 +14,7 @@ import { useAgentStore } from "@/stores/agentStore";
 // SHADCN
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+
 
 
 // FRAMER MOTION
@@ -42,7 +34,7 @@ import {
 import { useRegistryTools, RegistryTool } from "@/hooks/useRegistryTools";
 
 // LUCIDE
-import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown, Wand2 } from "lucide-react";
+import { Info, Zap, ChevronRight, ShieldCheck, Settings2, ChevronDown, Wand2, Trash2 } from "lucide-react";
 
 // TYPES
 import { PermissionSet } from "@/types/permissions";
@@ -51,7 +43,6 @@ import { MCPTool } from "@/types/mcp";
 
 // POLICY COMPONENTS
 import { PolicyEditor } from "@/components/policy/policy-editor";
-import { IntegrationTemplates } from "@/components/policy/integration-templates";
 import { PolicyChatSheet } from "@/components/policy/policy-chat-sheet";
 
 // TYPESCRIPT
@@ -93,7 +84,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     toggleBlockedTool,
     toolPolicies,
     setToolPolicy,
-    clearToolPolicies,
   } = useAgentStore();
 
   // Registry Hook
@@ -102,7 +92,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
   // States
   const [expandedProviders, setExpandedProviders] = useState<Set<string>>(new Set());
   const [expandedTool, setExpandedTool] = useState<{ name: string; provider: string } | null>(null);
-  const [showIntegrationTemplates, setShowIntegrationTemplates] = useState<string | null>(null);
   const [chatSheetOpen, setChatSheetOpen] = useState(false);
 
   // Helper to get tools for a provider from registry or fallback
@@ -221,20 +210,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     setToolPolicy(toolName, json);
   }, [setToolPolicy]);
 
-  // Callback - Restore Provider Policies
-  const restoreProviderPolicies = useCallback((toolNames: string[]) => {
-    clearToolPolicies(toolNames);
-  }, [clearToolPolicies]);
-
-  // Callback - Apply Integration Template
-  const applyIntegrationTemplate = useCallback((providerId: string, policies: Record<string, string>) => {
-    Object.entries(policies).forEach(([toolName, policy]) => {
-      setToolPolicy(toolName, policy);
-    });
-    void providerId;
-    setShowIntegrationTemplates(null);
-  }, [setToolPolicy]);
-
   // Get tool fields for the active tool
   const getToolFields = useCallback((provider: string): string[] => {
     return TOOL_FIELDS[provider.toLowerCase()] || TOOL_FIELDS.default;
@@ -297,7 +272,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                 className="flex flex-col items-center justify-center gap-1.5 px-4 py-3 rounded-2xl text-xs font-medium bg-cta border-2 border-cta-border text-white hover:opacity-90 transition-opacity flex-shrink-0"
               >
                 <Wand2 className="w-4 h-4" />
-                Ask Anything
+                AI set up
               </button>
             </div>
 
@@ -334,46 +309,16 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                             <h4 className="font-medium text-foreground">
                               {provider?.name || providerId}
                             </h4>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              {tools.length - blockedCount} enabled, {blockedCount} blocked
-                              {policiesCount > 0 && (
-                                <span className="text-cta ml-1">
-                                  • {policiesCount} policies
-                                </span>
-                              )}
-                              {policiesCount > 0 && (
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    restoreProviderPolicies(tools.map((t) => t.name));
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.stopPropagation();
-                                      restoreProviderPolicies(tools.map((t) => t.name));
-                                    }
-                                  }}
-                                  className="text-destructive/70 hover:text-destructive transition-colors ml-1 cursor-pointer"
-                                >
-                                  • restore
-                                </span>
-                              )}
+                            <div className="text-xs flex items-center gap-1">
+                              <span className="text-muted-foreground">{tools.length} tools</span>
+                              <span className={clsx("ml-1", policiesCount > 0 ? "text-cta" : "text-muted-foreground")}>
+                                • {policiesCount} policies
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {/* Integration Templates Button */}
-                          <button
-                            onClick={() => setShowIntegrationTemplates(providerId)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-surface-1 text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors border border-border"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            Templates
-                          </button>
-
                           <Badge
                             variant="outline"
                             onClick={() => toggleProviderExpanded(providerId)}
@@ -411,64 +356,45 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                                   <div key={tool.name} className="bg-card">
                                     {/* Tool Row */}
                                     <div className="flex items-center justify-between px-4 py-3 hover:bg-surface-1 transition-colors">
-                                      <div className="flex items-center gap-3">
-                                        <Checkbox
-                                          id={tool.name}
-                                          checked={!tool.isBlocked}
-                                          onCheckedChange={() => toggleBlockedTool(tool.name)}
-                                        />
-                                        <Label
-                                          htmlFor={tool.name}
-                                          className="flex flex-col cursor-pointer gap-0"
-                                        >
-                                          <span
-                                            className={clsx(
-                                              "text-sm font-mono text-start w-full",
-                                              tool.isBlocked
-                                                ? "text-muted-foreground line-through"
-                                                : "text-foreground",
-                                            )}
-                                          >
-                                            {tool.name}
-                                          </span>
-                                          <span className="text-xs text-muted-foreground text-start w-full">
-                                            {tool.description}
-                                          </span>
-                                        </Label>
+                                      <div className="flex flex-col gap-0 min-w-0">
+                                        <span className="text-sm font-mono text-foreground truncate">
+                                          {tool.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {tool.description}
+                                        </span>
                                       </div>
 
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                                         {hasPolicy && (
                                           <Badge variant="outline" className="bg-cta/10 text-cta border-cta/30">
                                             <ShieldCheck className="w-3 h-3 mr-1" />
                                             Policy
                                           </Badge>
                                         )}
-                                        {tool.isBlocked ? (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-destructive border-destructive/30 bg-destructive/10"
-                                          >
-                                            {t("blocked")}
-                                          </Badge>
-                                        ) : (
-                                          <button
-                                            onClick={() => toggleToolExpanded(tool.name, tool.provider)}
-                                            className={clsx(
-                                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all",
-                                              isToolExpanded 
-                                                ? "bg-surface-2 border-2 border-border text-foreground" 
-                                                : "bg-cta border-2 border-cta-border text-white hover:opacity-90"
-                                            )}
-                                          >
-                                            <Settings2 className="w-3.5 h-3.5" />
-                                            Policy
-                                            <ChevronDown className={clsx(
-                                              "w-3.5 h-3.5 transition-transform",
-                                              isToolExpanded && "rotate-180"
-                                            )} />
-                                          </button>
-                                        )}
+                                        <button
+                                          onClick={() => toggleToolExpanded(tool.name, tool.provider)}
+                                          className={clsx(
+                                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all",
+                                            isToolExpanded
+                                              ? "bg-surface-2 border-2 border-border text-foreground"
+                                              : "bg-cta border-2 border-cta-border text-white hover:opacity-90"
+                                          )}
+                                        >
+                                          <Settings2 className="w-3.5 h-3.5" />
+                                          Policy
+                                          <ChevronDown className={clsx(
+                                            "w-3.5 h-3.5 transition-transform",
+                                            isToolExpanded && "rotate-180"
+                                          )} />
+                                        </button>
+                                        <button
+                                          onClick={() => toggleBlockedTool(tool.name)}
+                                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                          aria-label={`Remove ${tool.name}`}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
                                       </div>
                                     </div>
 
@@ -533,30 +459,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
       {/* POLICY CHAT SHEET */}
       <PolicyChatSheet open={chatSheetOpen} onOpenChange={setChatSheetOpen} />
 
-      {/* INTEGRATION TEMPLATES DIALOG */}
-      <Dialog 
-        open={showIntegrationTemplates !== null} 
-        onOpenChange={(open) => !open && setShowIntegrationTemplates(null)}
-      >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <ShieldCheck className="w-5 h-5 text-cta" />
-              Policy Templates for {showIntegrationTemplates && getProviderById(showIntegrationTemplates)?.name}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Apply pre-configured policy templates to quickly set up common access patterns.
-            </DialogDescription>
-          </DialogHeader>
-          {showIntegrationTemplates && (
-            <IntegrationTemplates
-              providerId={showIntegrationTemplates}
-              tools={groupedToolsByProvider[showIntegrationTemplates] || []}
-              onApply={(policies) => applyIntegrationTemplate(showIntegrationTemplates, policies)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 };
