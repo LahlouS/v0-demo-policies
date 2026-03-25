@@ -10,12 +10,16 @@ interface AgentState {
   providerStates: Record<string, AgentProviderState>;
   mcpEnabled: boolean;
   blockedTools: string[];
-  
+  toolPolicies: Record<string, string>;
+
   setWorkspaceId: (id: number) => void;
   setIdentityName: (name: string) => void;
   setDescription: (desc: string) => void;
   setMcpEnabled: (enabled: boolean) => void;
   toggleBlockedTool: (toolName: string) => void;
+  setToolPolicy: (toolName: string, policy: string) => void;
+  clearToolPolicies: (toolNames: string[]) => void;
+  getConfigSnapshot: () => object;
   resetAgent: () => void;
 }
 
@@ -32,7 +36,7 @@ const mockProviderStates: Record<string, AgentProviderState> = {
   linear: { selectedScopes: ['issues.read', 'issues.write'] },
 };
 
-export const useAgentStore = create<AgentState>((set) => ({
+export const useAgentStore = create<AgentState>((set, get) => ({
   workspaceId: null,
   identityName: '',
   description: '',
@@ -40,6 +44,7 @@ export const useAgentStore = create<AgentState>((set) => ({
   providerStates: mockProviderStates,
   mcpEnabled: true,
   blockedTools: [],
+  toolPolicies: {},
 
   setWorkspaceId: (id) => set({ workspaceId: id }),
   setIdentityName: (name) => set({ identityName: name }),
@@ -51,11 +56,33 @@ export const useAgentStore = create<AgentState>((set) => ({
         ? state.blockedTools.filter((t) => t !== toolName)
         : [...state.blockedTools, toolName],
     })),
+  setToolPolicy: (toolName, policy) =>
+    set((state) => ({
+      toolPolicies: { ...state.toolPolicies, [toolName]: policy },
+    })),
+  clearToolPolicies: (toolNames) =>
+    set((state) => {
+      const next = { ...state.toolPolicies };
+      toolNames.forEach((name) => delete next[name]);
+      return { toolPolicies: next };
+    }),
+  getConfigSnapshot: () => {
+    const { blockedTools, toolPolicies, permissionSets, providerStates } = get();
+    return {
+      blockedTools,
+      toolPolicies,
+      providers: permissionSets.map((ps) => ({
+        provider: ps.provider,
+        scopes: providerStates[ps.provider]?.selectedScopes ?? ps.scopes,
+      })),
+    };
+  },
   resetAgent: () =>
     set({
       workspaceId: null,
       identityName: '',
       description: '',
       blockedTools: [],
+      toolPolicies: {},
     }),
 }));

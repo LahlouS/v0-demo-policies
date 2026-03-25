@@ -64,14 +64,15 @@ function RuleRow({
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
-  const fieldCls = "h-11 rounded-xl border-2 border-border bg-input px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors";
+  const fieldCls = "h-9 w-full rounded-lg border border-border bg-input px-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors truncate";
 
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, gridTemplateColumns: "16px auto 1fr 1fr 1fr 28px" }}
+      style={style}
       className={cn(
-        "group grid items-center gap-2 p-2.5 rounded-xl border border-border bg-card transition-shadow",
+        "group grid items-center gap-2 p-2 rounded-xl border border-border bg-card transition-shadow",
+        "grid-cols-[16px_60px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_24px]",
         isDragging ? "shadow-2xl opacity-80 z-50" : "hover:border-foreground/15",
       )}
     >
@@ -89,7 +90,7 @@ function RuleRow({
       <button
         onClick={() => onUpdate({ ...rule, effect: rule.effect === "allow" ? "deny" : "allow" })}
         className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap",
+          "flex items-center justify-center gap-1 w-full h-9 px-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide transition-colors whitespace-nowrap",
           rule.effect === "allow"
             ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-950/60"
             : "bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60"
@@ -178,18 +179,25 @@ export function VisualBuilder({ rules, onChange, toolFields }: VisualBuilderProp
 
   return (
     <div className="flex flex-col gap-2.5 p-4">
-      {/* Column labels */}
+      {/* Column labels + Clear all */}
       {rules.length > 0 && (
-        <div
-          className="grid items-center gap-2 px-2.5 pb-1"
-          style={{ gridTemplateColumns: "16px auto 1fr 1fr 1fr 28px" }}
-        >
-          <span />
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Effect</span>
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Field</span>
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Operator</span>
-          <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Value</span>
-          <span />
+        <div className="flex items-center justify-between px-2 pb-1">
+          <div className="grid items-center gap-2 flex-1 grid-cols-[16px_60px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_24px]">
+            <span />
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Effect</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Field</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Operator</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Value</span>
+            <span />
+          </div>
+          <button
+            onClick={() => onChange([])}
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-destructive transition-colors ml-2"
+            aria-label="Clear all rules"
+          >
+            <Trash2 className="w-3 h-3" />
+            Clear
+          </button>
         </div>
       )}
 

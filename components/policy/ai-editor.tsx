@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, ArrowRight, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowRight, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AiEditorProps {
@@ -20,8 +20,7 @@ const SUGGESTIONS = [
 
 export function AiEditor({ toolName, onAccept }: AiEditorProps) {
   const [prompt, setPrompt] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [preview, setPreview] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,7 +34,6 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
   async function generate() {
     if (!prompt.trim()) return;
     setStatus("loading");
-    setPreview("");
     setErrorMsg("");
 
     try {
@@ -46,21 +44,23 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
       });
       const data = await res.json();
       if (!res.ok) { setErrorMsg(data.error ?? "Unknown error"); setStatus("error"); return; }
-      setPreview(JSON.stringify(data.policy, null, 2));
-      setStatus("success");
+      // Apply policy directly - user can review/edit in the right panel
+      onAccept(JSON.stringify(data.policy, null, 2));
+      setPrompt("");
+      setStatus("idle");
     } catch (e) {
       setErrorMsg((e as Error).message);
       setStatus("error");
     }
   }
 
-  function reset() { setPrompt(""); setPreview(""); setStatus("idle"); setErrorMsg(""); }
+  function reset() { setPrompt(""); setStatus("idle"); setErrorMsg(""); }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 h-full">
       {/* Prompt box */}
       <div className={cn(
-        "relative rounded-xl border-2 bg-card transition-all duration-200",
+        "relative rounded-xl border-2 bg-card transition-all duration-200 flex-shrink-0",
         status === "loading"
           ? "border-ring shadow-[0_0_0_2px_var(--color-brand-muted)]"
           : "border-border focus-within:border-ring focus-within:shadow-[0_0_0_2px_var(--color-brand-muted)]"
@@ -83,7 +83,7 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
         </div>
         <div className="flex items-center justify-between px-4 pb-3 pt-1">
           <span className="text-[11px] text-muted-foreground/40">
-            {status === "loading" ? "Generating with Mistral..." : "⌘ Return to generate"}
+            {status === "loading" ? "Generating with Mistral..." : "Cmd + Return to generate"}
           </span>
           <button
             onClick={generate}
@@ -104,26 +104,9 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
         </div>
       </div>
 
-      {/* Suggestions */}
-      {status === "idle" && (
-        <div className="flex flex-col gap-1">
-          <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-0.5 mb-0.5">Try these</p>
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setPrompt(s)}
-              className="flex items-center gap-2.5 text-left text-xs text-muted-foreground px-3 py-2 rounded-lg hover:bg-surface-1 hover:text-foreground transition-colors group"
-            >
-              <span className="w-1 h-1 rounded-full bg-border group-hover:bg-brand flex-shrink-0 transition-colors" />
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Error */}
       {status === "error" && (
-        <div className="flex items-start gap-2.5 px-3 py-3 rounded-xl bg-destructive/8 border border-destructive/20">
+        <div className="flex items-start gap-2.5 px-3 py-3 rounded-xl bg-destructive/8 border border-destructive/20 flex-shrink-0">
           <span className="text-xs text-destructive leading-relaxed flex-1">{errorMsg}</span>
           <button onClick={reset} className="flex-shrink-0 text-destructive/60 hover:text-destructive transition-colors mt-0.5">
             <RotateCcw className="w-3.5 h-3.5" />
@@ -131,40 +114,25 @@ export function AiEditor({ toolName, onAccept }: AiEditorProps) {
         </div>
       )}
 
-      {/* Preview */}
-      {status === "success" && preview && (
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-xs text-muted-foreground">Policy generated</span>
-            </div>
-            <button onClick={reset} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <RotateCcw className="w-3 h-3" />
-              Regenerate
-            </button>
-          </div>
-          <div className="rounded-xl border border-border overflow-hidden">
-            <pre className="bg-editor-bg text-[11px] font-mono text-emerald-400 p-4 overflow-auto max-h-52 leading-relaxed">
-              {preview}
-            </pre>
-          </div>
-          <div className="flex gap-2">
+      {/* Suggestions - always visible at bottom, scrollable area */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex flex-col gap-1">
+          <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-0.5 mb-1 sticky top-0 bg-surface-1 py-1">
+            Try these
+          </p>
+          {SUGGESTIONS.map((s) => (
             <button
-              onClick={() => { onAccept(preview); reset(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-cta border-2 border-cta-border text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              key={s}
+              onClick={() => setPrompt(s)}
+              disabled={status === "loading"}
+              className="flex items-center gap-2.5 text-left text-xs text-muted-foreground px-3 py-2 rounded-lg hover:bg-surface-2 hover:text-foreground transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Apply policy
+              <span className="w-1 h-1 rounded-full bg-border group-hover:bg-cta flex-shrink-0 transition-colors" />
+              {s}
             </button>
-            <button
-              onClick={reset}
-              className="px-3 py-2.5 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
-            >
-              Discard
-            </button>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

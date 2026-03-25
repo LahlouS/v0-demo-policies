@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { Code2, LayoutList, Sparkles, BookOpen, ChevronRight } from "lucide-react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Code2, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JsonEditor } from "./json-editor";
 import { VisualBuilder, type PolicyRule } from "./visual-builder";
 import { AiEditor } from "./ai-editor";
-import { Templates } from "./templates";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,7 +15,6 @@ interface PolicyEditorProps {
   serviceName: string;
   policyJson: string;
   onPolicyChange: (json: string) => void;
-  onNext: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -52,31 +50,55 @@ function buildJsonFromRules(currentJson: string, rules: PolicyRule[]): string {
   }
 }
 
-// ─── Tab config ───────────────────────────────────────────────────────────────
+// ─── Draggable Divider Hook ───────────────────────────────────────────────────
 
-const TABS = [
-  { id: "ai",        label: "AI",        icon: Sparkles },
-  { id: "visual",    label: "Visual",    icon: LayoutList },
-  { id: "json",      label: "JSON",      icon: Code2 },
-  { id: "templates", label: "Inspiration", icon: BookOpen },
-] as const;
+function useDraggableDivider(initialLeftPercent = 50, minPercent = 25, maxPercent = 75) {
+  const [leftPercent, setLeftPercent] = useState(initialLeftPercent);
+  const isDragging = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-type TabId = (typeof TABS)[number]["id"];
+  const handleMouseDown = useCallback(() => {
+    isDragging.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      setLeftPercent(Math.max(minPercent, Math.min(maxPercent, percent)));
+    };
+
+    const handleMouseUp = () => {
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [minPercent, maxPercent]);
+
+  return { leftPercent, handleMouseDown, containerRef };
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, onPolicyChange, onNext }: PolicyEditorProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("ai");
-  const [visualRules, setVisualRules] = useState<PolicyRule[]>([]);
+export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, onPolicyChange }: PolicyEditorProps) {
+  const [rightEditor, setRightEditor] = useState<"visual" | "json">("visual");
+  const [visualRules, setVisualRules] = useState<PolicyRule[]>(() => parseRulesFromJson(policyJson));
+  const { leftPercent, handleMouseDown, containerRef } = useDraggableDivider(50, 30, 70);
 
-  // Sync rules from JSON whenever tab switches to visual or policyJson changes from outside
+  // Sync visual rules when policyJson changes from AI or external source
   useEffect(() => {
-    if (activeTab === "visual") {
-      setVisualRules(parseRulesFromJson(policyJson));
-    }
-    // Only re-sync when switching tabs; policyJson changes via visual are handled by handleVisualChange
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+    setVisualRules(parseRulesFromJson(policyJson));
+  }, [policyJson]);
 
   const handleJsonChange = useCallback((val: string) => {
     onPolicyChange(val);
@@ -90,86 +112,80 @@ export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, on
 
   const handleAiAccept = useCallback((json: string) => {
     onPolicyChange(json);
-    setActiveTab("visual");
+    // Visual rules will sync via the useEffect above
   }, [onPolicyChange]);
-
-  const handleTemplateApply = useCallback((json: string) => {
-    onPolicyChange(json);
-    setActiveTab("visual");
-  }, [onPolicyChange]);
-
-  const ruleCount = visualRules.length;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Tab bar — Vision Pro pill style */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-0 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-0.5 bg-muted/60 rounded-full p-0.5">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="hidden sm:block">{tab.label}</span>
-                {tab.id === "ai" && (
-                  <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-brand" />
-                )}
-              </button>
-            );
-          })}
+      {/* Split layout */}
+      <div ref={containerRef} className="flex-1 flex min-h-0 relative">
+        {/* Left: AI Editor */}
+        <div 
+          className="overflow-y-auto border-r border-border"
+          style={{ width: `${leftPercent}%` }}
+        >
+          <AiEditor toolName={toolName} onAccept={handleAiAccept} />
         </div>
 
-        <button
-          onClick={onNext}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cta border-2 border-cta-border text-white text-xs font-medium hover:opacity-90 transition-opacity mb-0.5"
+        {/* Draggable divider */}
+        <div
+          onMouseDown={handleMouseDown}
+          className="absolute top-0 bottom-0 w-1 cursor-col-resize hover:bg-cta/50 active:bg-cta z-10 transition-colors"
+          style={{ left: `calc(${leftPercent}% - 2px)` }}
+        />
+
+        {/* Right: Visual/JSON toggle + editor */}
+        <div 
+          className="flex flex-col min-h-0"
+          style={{ width: `${100 - leftPercent}%` }}
         >
-          Review
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Tab content — fills remaining space */}
-      <div className={cn("flex-1 min-h-0", activeTab === "json" ? "overflow-hidden" : "overflow-y-auto")}>
-        {activeTab === "json" && (
-          <div className="h-full">
-            <JsonEditor value={policyJson} onChange={handleJsonChange} />
+          {/* Toggle for Visual / JSON */}
+          <div className="flex items-center gap-1 p-2 border-b border-border bg-surface-1 flex-shrink-0">
+            <button
+              onClick={() => setRightEditor("visual")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                rightEditor === "visual"
+                  ? "bg-background text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
+              )}
+            >
+              <LayoutList className="w-3.5 h-3.5" />
+              Visual
+            </button>
+            <button
+              onClick={() => setRightEditor("json")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                rightEditor === "json"
+                  ? "bg-background text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
+              )}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              JSON
+            </button>
           </div>
-        )}
-        {activeTab === "visual" && (
-          <VisualBuilder
-            rules={visualRules}
-            onChange={handleVisualChange}
-            toolFields={toolFields}
-            toolName={toolName}
-            serviceName={serviceName}
-          />
-        )}
-        {activeTab === "ai" && (
-          <AiEditor toolName={toolName} onAccept={handleAiAccept} />
-        )}
-        {activeTab === "templates" && (
-          <Templates onApply={handleTemplateApply} />
-        )}
-      </div>
 
-      {/* Rule count footer */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-t border-border bg-surface-1">
-        <span className="text-xs text-muted-foreground font-mono">
-          {serviceName} / {toolName}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {ruleCount} rule{ruleCount !== 1 ? "s" : ""}
-        </span>
+          {/* Editor content */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {rightEditor === "json" ? (
+              <div className="h-full">
+                <JsonEditor value={policyJson} onChange={handleJsonChange} />
+              </div>
+            ) : (
+              <div className="h-full overflow-y-auto">
+                <VisualBuilder
+                  rules={visualRules}
+                  onChange={handleVisualChange}
+                  toolFields={toolFields}
+                  toolName={toolName}
+                  serviceName={serviceName}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
