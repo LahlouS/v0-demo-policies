@@ -232,6 +232,11 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
     }
   };
 
+  console.log("[v0] availableTools:", availableTools.length);
+  console.log("[v0] groupedToolsByProvider:", Object.keys(groupedToolsByProvider));
+  console.log("[v0] permissionSets:", permissionSets);
+  console.log("[v0] providerStates:", providerStates);
+
   return (
     <div className="flex flex-col items-center justify-start h-full w-full px-8 py-12 max-w-4xl mx-auto space-y-8">
       {/* HEADER */}
