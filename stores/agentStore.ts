@@ -68,12 +68,38 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     }),
   getConfigSnapshot: () => {
     const { blockedTools, toolPolicies, permissionSets, providerStates } = get();
+
+    // Helper: derive provider from tool name (e.g., "gmail_send_email" → "gmail")
+    const getProviderFromToolName = (toolName: string): string => {
+      const match = toolName.match(/^([a-z]+)_/);
+      return match ? match[1] : "unknown";
+    };
+
+    // Group blocked tools and policies by provider
+    const blockedByProvider: Record<string, string[]> = {};
+    blockedTools.forEach((toolName) => {
+      const provider = getProviderFromToolName(toolName);
+      if (!blockedByProvider[provider]) blockedByProvider[provider] = [];
+      blockedByProvider[provider].push(toolName);
+    });
+
+    const policiesByProvider: Record<string, Record<string, unknown>> = {};
+    Object.entries(toolPolicies).forEach(([toolName, policyJson]) => {
+      const provider = getProviderFromToolName(toolName);
+      if (!policiesByProvider[provider]) policiesByProvider[provider] = {};
+      try {
+        policiesByProvider[provider][toolName] = JSON.parse(policyJson);
+      } catch {
+        policiesByProvider[provider][toolName] = policyJson;
+      }
+    });
+
     return {
-      blockedTools,
-      toolPolicies,
       providers: permissionSets.map((ps) => ({
         provider: ps.provider,
         scopes: providerStates[ps.provider]?.selectedScopes ?? ps.scopes,
+        blockedTools: blockedByProvider[ps.provider] ?? [],
+        toolPolicies: policiesByProvider[ps.provider] ?? {},
       })),
     };
   },
