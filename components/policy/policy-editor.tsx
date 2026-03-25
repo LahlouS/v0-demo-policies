@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Code2, LayoutList, ChevronRight } from "lucide-react";
+import { Code2, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { JsonEditor } from "./json-editor";
 import { VisualBuilder, type PolicyRule } from "./visual-builder";
@@ -15,7 +15,6 @@ interface PolicyEditorProps {
   serviceName: string;
   policyJson: string;
   onPolicyChange: (json: string) => void;
-  onNext: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,7 +90,7 @@ function useDraggableDivider(initialLeftPercent = 50, minPercent = 25, maxPercen
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, onPolicyChange, onNext }: PolicyEditorProps) {
+export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, onPolicyChange }: PolicyEditorProps) {
   const [rightEditor, setRightEditor] = useState<"visual" | "json">("visual");
   const [visualRules, setVisualRules] = useState<PolicyRule[]>(() => parseRulesFromJson(policyJson));
   const { leftPercent, handleMouseDown, containerRef } = useDraggableDivider(50, 30, 70);
@@ -116,29 +115,8 @@ export function PolicyEditor({ toolName, toolFields, serviceName, policyJson, on
     // Visual rules will sync via the useEffect above
   }, [onPolicyChange]);
 
-  const ruleCount = visualRules.length;
-
   return (
     <div className="flex flex-col h-full">
-      {/* Header with toggle and review button */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0 bg-surface-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-mono">
-            {serviceName} / {toolName}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            ({ruleCount} rule{ruleCount !== 1 ? "s" : ""})
-          </span>
-        </div>
-        <button
-          onClick={onNext}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cta border-2 border-cta-border text-white text-xs font-medium hover:opacity-90 transition-opacity"
-        >
-          Done
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
       {/* Split layout */}
       <div ref={containerRef} className="flex-1 flex min-h-0 relative">
         {/* Left: AI Editor */}

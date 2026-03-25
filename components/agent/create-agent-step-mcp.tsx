@@ -414,7 +414,6 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                                               serviceName={tool.provider}
                                               policyJson={toolPolicies[tool.name] || getDefaultPolicy(tool.name)}
                                               onPolicyChange={(json) => updateToolPolicy(tool.name, json)}
-                                              onNext={() => setExpandedTool(null)}
                                             />
                                           </div>
                                         </motion.div>
