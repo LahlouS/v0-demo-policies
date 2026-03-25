@@ -310,7 +310,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                               {provider?.name || providerId}
                             </h4>
                             <div className="text-xs flex items-center gap-1">
-                              <span className="text-muted-foreground">{tools.length} tools</span>
+                              <span className="text-muted-foreground">{tools.filter((t) => !blockedTools.includes(t.name)).length} tools</span>
                               <span className={clsx("ml-1", policiesCount > 0 ? "text-cta" : "text-muted-foreground")}>
                                 • {policiesCount} policies
                               </span>
@@ -348,7 +348,7 @@ const CreateAgentStepMCP = ({ nextStep, prevStep }: Props) => {
                             className="overflow-hidden"
                           >
                             <div className="border-t border-border divide-y divide-border">
-                              {tools.map((tool) => {
+                              {tools.filter((t) => !blockedTools.includes(t.name)).map((tool) => {
                                 const hasPolicy = hasCustomPolicy(tool.name);
                                 const isToolExpanded = expandedTool?.name === tool.name;
 
